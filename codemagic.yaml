@@ -12,13 +12,14 @@ workflows:
         script: flutter pub get
       - name: Build AAB
         script: |
-          echo $CM_KEYSTORE | base64 --decode > /tmp/smartcv.jks
           flutter build appbundle --release \
             --android-skip-build-dependency-validation
       - name: Sign AAB
         script: |
+          echo $CM_KEYSTORE | base64 --decode > /tmp/smartcv.p12
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore /tmp/smartcv.jks \
+            -keystore /tmp/smartcv.p12 \
+            -storetype PKCS12 \
             -storepass $CM_KEYSTORE_PASSWORD \
             -keypass $CM_KEY_PASSWORD \
             build/app/outputs/bundle/release/app-release.aab \
