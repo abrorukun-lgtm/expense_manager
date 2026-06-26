@@ -12,8 +12,8 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   double totalSales = 0;
   double totalExpenses = 0;
-  double totalStockValue = 0;
-  List<Map<String, dynamic>> topItems = [];
+  List<Map<String, dynamic>> sales = [];
+  List<Map<String, dynamic>> expenses = [];
 
   @override
   void initState() {
@@ -22,41 +22,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _loadData() async {
-    final sales = await DatabaseHelper.instance.getSales();
-    final expenses = await DatabaseHelper.instance.getExpenses();
-    final items = await DatabaseHelper.instance.getItems();
+    final salesData = await DatabaseHelper.instance.getSales();
+    final expensesData = await DatabaseHelper.instance.getExpenses();
 
-    double sTotal = sales.fold(0, (sum, s) => sum + (s['total'] as double));
-    double eTotal =
-        expenses.fold(0, (sum, e) => sum + (e['amount'] as double));
-    double stockVal = items.fold(
-        0,
-        (sum, i) =>
-            sum + (i['quantity'] as int) * (i['price'] as double));
+    double sTotal = salesData.fold(0, (sum, s) => sum + (s['price'] as double) * (s['quantity'] as int));
+    double eTotal = expensesData.fold(0, (sum, e) => sum + (e['amount'] as double));
 
     setState(() {
+      sales = salesData;
+      expenses = expensesData;
       totalSales = sTotal;
       totalExpenses = eTotal;
-      totalStockValue = stockVal;
-      topItems = items.take(5).toList();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     double profit = totalSales - totalExpenses;
-
     return Scaffold(
       backgroundColor: const Color(0xFF1a2744),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1a2744),
-        title: const Text('Reports',
-            style: TextStyle(
-                color: Color(0xFFc9a84c), fontWeight: FontWeight.bold)),
+        title: const Text('Reports', style: TextStyle(color: Color(0xFFc9a84c), fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              onPressed: _loadData),
+          IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _loadData),
         ],
       ),
       body: ListView(
@@ -65,57 +54,75 @@ class _ReportsScreenState extends State<ReportsScreen> {
           // Summary Cards
           Row(
             children: [
-              _summaryCard('Total Sales',
-                  'Rs. ${totalSales.toStringAsFixed(0)}', Colors.green),
-              const SizedBox(width: 8),
-              _summaryCard('Total Expenses',
-                  'Rs. ${totalExpenses.toStringAsFixed(0)}', Colors.red),
+              Expanded(
+                child: Card(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.trending_up, color: Colors.green, size: 32),
+                        const Text('Total Sales', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Rs. ${totalSales.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, color: Colors.green, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Card(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.trending_down, color: Colors.red, size: 32),
+                        const Text('Total Expenses', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Rs. ${totalExpenses.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              _summaryCard('Net Profit',
-                  'Rs. ${profit.toStringAsFixed(0)}',
-                  profit >= 0 ? Colors.green : Colors.red),
-              const SizedBox(width: 8),
-              _summaryCard('Stock Value',
-                  'Rs. ${totalStockValue.toStringAsFixed(0)}',
-                  const Color(0xFFc9a84c)),
-            ],
+          Card(
+            color: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Icon(Icons.account_balance_wallet, color: Color(0xFF1a2744), size: 32),
+                  const Text('Net Profit', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Rs. ${profit.toStringAsFixed(0)}',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: profit >= 0 ? Colors.green : Colors.red)),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 16),
 
-          // Bar Chart
+          // Chart
           if (totalSales > 0 || totalExpenses > 0)
             Card(
               color: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Sales vs Expenses',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text('Sales vs Expenses', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 16),
                     SizedBox(
                       height: 200,
                       child: BarChart(
                         BarChartData(
-                          alignment: BarChartAlignment.spaceAround,
                           barGroups: [
                             BarChartGroupData(x: 0, barRods: [
-                              BarChartRodData(
-                                  toY: totalSales,
-                                  color: Colors.green,
-                                  width: 40)
+                              BarChartRodData(toY: totalSales, color: Colors.green, width: 40),
                             ]),
                             BarChartGroupData(x: 1, barRods: [
-                              BarChartRodData(
-                                  toY: totalExpenses,
-                                  color: Colors.red,
-                                  width: 40)
+                              BarChartRodData(toY: totalExpenses, color: Colors.red, width: 40),
                             ]),
                           ],
                           titlesData: FlTitlesData(
@@ -123,18 +130,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 getTitlesWidget: (val, meta) {
-                                  return Text(
-                                      val == 0 ? 'Sales' : 'Expenses',
-                                      style: const TextStyle(fontSize: 12));
+                                  return Text(val == 0 ? 'Sales' : 'Expenses', style: const TextStyle(fontSize: 12));
                                 },
                               ),
                             ),
-                            leftTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false)),
-                            topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false)),
+                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                           ),
                           gridData: const FlGridData(show: false),
                           borderData: FlBorderData(show: false),
@@ -145,58 +147,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               ),
             ),
-          const SizedBox(height: 16),
-
-          // Top Items
-          Card(
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Inventory Overview',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 8),
-                  ...topItems.map((item) => ListTile(
-                        title: Text(item['name']),
-                        subtitle: Text('${item['category']}'),
-                        trailing: Text(
-                            '${item['quantity']} units\nRs. ${item['price']}',
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold)),
-                      )),
-                ],
-              ),
-            ),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _summaryCard(String title, String value, Color color) {
-    return Expanded(
-      child: Card(
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 4),
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: color)),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -14,13 +14,8 @@ class MyApp extends StatelessWidget {
       title: 'Expense & Inventory Manager',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: const Color(0xFF1a2744),
-        scaffoldBackgroundColor: const Color(0xFF1a2744),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1a2744),
-          primary: const Color(0xFF1a2744),
-          secondary: const Color(0xFFc9a84c),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1a2744)),
+        useMaterial3: true,
       ),
       home: const DashboardScreen(),
     );

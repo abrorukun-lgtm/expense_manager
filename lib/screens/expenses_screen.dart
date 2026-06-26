@@ -11,11 +11,6 @@ class ExpensesScreen extends StatefulWidget {
 class _ExpensesScreenState extends State<ExpensesScreen> {
   List<Map<String, dynamic>> expenses = [];
 
-  final List<String> categories = [
-    'Rent', 'Utilities', 'Salaries', 'Transport',
-    'Marketing', 'Supplies', 'Other'
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -27,77 +22,57 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     setState(() => expenses = data);
   }
 
+  Future<void> _deleteExpense(int id) async {
+    await DatabaseHelper.instance.deleteExpense(id);
+    _loadExpenses();
+  }
+
   void _showAddExpenseDialog() {
     final titleController = TextEditingController();
     final amountController = TextEditingController();
-    String selectedCategory = categories.first;
+    final categoryController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Expense'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-              ),
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(labelText: 'Amount (Rs.)'),
-                keyboardType: TextInputType.number,
-              ),
-              DropdownButtonFormField<String>(
-                value: selectedCategory,
-                decoration: const InputDecoration(labelText: 'Category'),
-                items: categories.map((cat) {
-                  return DropdownMenuItem(value: cat, child: Text(cat));
-                }).toList(),
-                onChanged: (val) =>
-                    setDialogState(() => selectedCategory = val!),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel')),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFc9a84c)),
-              onPressed: () async {
-                await DatabaseHelper.instance.addExpense({
-                  'title': titleController.text,
-                  'amount': double.tryParse(amountController.text) ?? 0,
-                  'category': selectedCategory,
-                  'date': DateTime.now().toIso8601String(),
-                });
-                Navigator.pop(context);
-                _loadExpenses();
-              },
-              child: const Text('Add',
-                  style: TextStyle(color: Colors.white)),
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text('Add Expense'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
+            TextField(controller: amountController, decoration: const InputDecoration(labelText: 'Amount (Rs.)'), keyboardType: TextInputType.number),
+            TextField(controller: categoryController, decoration: const InputDecoration(labelText: 'Category')),
           ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1a2744)),
+            onPressed: () async {
+              await DatabaseHelper.instance.addExpense({
+                'title': titleController.text,
+                'amount': double.tryParse(amountController.text) ?? 0,
+                'category': categoryController.text,
+                'date': DateTime.now().toIso8601String(),
+              });
+              Navigator.pop(context);
+              _loadExpenses();
+            },
+            child: const Text('Add', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    double totalExpenses =
-        expenses.fold(0, (sum, e) => sum + (e['amount'] as double));
-
+    double total = expenses.fold(0, (sum, e) => sum + (e['amount'] as double));
     return Scaffold(
       backgroundColor: const Color(0xFF1a2744),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1a2744),
-        title: const Text('Expenses',
-            style: TextStyle(
-                color: Color(0xFFc9a84c), fontWeight: FontWeight.bold)),
+        title: const Text('Expenses', style: TextStyle(color: Color(0xFFc9a84c), fontWeight: FontWeight.bold)),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFFc9a84c),
@@ -109,28 +84,18 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Total Expenses: ', style: TextStyle(fontSize: 16)),
-                Text('Rs. ${totalExpenses.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red)),
+                const Text('Total Expenses', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Rs. ${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1a2744))),
               ],
             ),
           ),
           Expanded(
             child: expenses.isEmpty
-                ? const Center(
-                    child: Text('No expenses yet.',
-                        style:
-                            TextStyle(color: Colors.white54, fontSize: 16)))
+                ? const Center(child: Text('No expenses added yet', style: TextStyle(color: Colors.white)))
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: expenses.length,
@@ -141,24 +106,21 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: const CircleAvatar(
-                            backgroundColor: Colors.red,
-                            child: Icon(Icons.receipt,
-                                color: Colors.white, size: 18),
+                            backgroundColor: Color(0xFF1a2744),
+                            child: Icon(Icons.receipt, color: Colors.white),
                           ),
-                          title: Text(expense['title'],
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
-                          subtitle: Text(expense['category']),
-                          trailing: Text(
-                              'Rs. ${expense['amount'].toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red)),
-                          onLongPress: () async {
-                            await DatabaseHelper.instance
-                                .deleteExpense(expense['id']);
-                            _loadExpenses();
-                          },
+                          title: Text(expense['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(expense['category'] ?? ''),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Rs. ${expense['amount']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteExpense(expense['id']),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
