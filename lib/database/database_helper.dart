@@ -21,7 +21,7 @@ class DatabaseHelper {
 
   Future _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE inventory (
+      CREATE TABLE items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         category TEXT,
@@ -30,7 +30,6 @@ class DatabaseHelper {
         lowStockLimit INTEGER DEFAULT 5
       )
     ''');
-
     await db.execute('''
       CREATE TABLE expenses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,43 +39,37 @@ class DatabaseHelper {
         date TEXT NOT NULL
       )
     ''');
-
     await db.execute('''
       CREATE TABLE sales (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        itemId INTEGER,
         itemName TEXT,
         quantity INTEGER,
         price REAL,
-        total REAL,
         date TEXT NOT NULL
       )
     ''');
   }
 
-  // INVENTORY
   Future<int> addItem(Map<String, dynamic> item) async {
     final db = await database;
-    return await db.insert('inventory', item);
+    return await db.insert('items', item);
   }
 
   Future<List<Map<String, dynamic>>> getItems() async {
     final db = await database;
-    return await db.query('inventory');
+    return await db.query('items');
   }
 
   Future<int> updateItem(Map<String, dynamic> item) async {
     final db = await database;
-    return await db.update('inventory', item,
-        where: 'id = ?', whereArgs: [item['id']]);
+    return await db.update('items', item, where: 'id = ?', whereArgs: [item['id']]);
   }
 
   Future<int> deleteItem(int id) async {
     final db = await database;
-    return await db.delete('inventory', where: 'id = ?', whereArgs: [id]);
+    return await db.delete('items', where: 'id = ?', whereArgs: [id]);
   }
 
-  // EXPENSES
   Future<int> addExpense(Map<String, dynamic> expense) async {
     final db = await database;
     return await db.insert('expenses', expense);
@@ -92,7 +85,6 @@ class DatabaseHelper {
     return await db.delete('expenses', where: 'id = ?', whereArgs: [id]);
   }
 
-  // SALES
   Future<int> addSale(Map<String, dynamic> sale) async {
     final db = await database;
     return await db.insert('sales', sale);
