@@ -19,9 +19,9 @@ workflows:
           keyAlias=$CM_KEY_ALIAS
           storeFile=/tmp/smartcv.p12
           EOF
-      - name: Build AAB
+      - name: Build APK
         script: |
-          flutter build appbundle --release \
+          flutter build apk --release \
             --android-skip-build-dependency-validation
     artifacts:
-      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/*.apk
