@@ -13,6 +13,12 @@ workflows:
       - name: Setup Keystore
         script: |
           echo $CM_KEYSTORE | base64 --decode > /tmp/smartcv.p12
+          cat >> "$CM_BUILD_DIR/android/key.properties" <<EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=/tmp/smartcv.p12
+          EOF
       - name: Build AAB
         script: |
           flutter build appbundle --release \
