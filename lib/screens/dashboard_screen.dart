@@ -121,12 +121,15 @@ class _DashboardHomeState extends State<DashboardHome> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    const Text('Current Stock Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text('Current Stock Status',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text('$totalUnits', style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF1a2744))),
+                    Text('$totalUnits',
+                        style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF1a2744))),
                     const Text('Total units'),
                     const SizedBox(height: 8),
-                    Text('Rs. ${totalValue.toStringAsFixed(0)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1a2744))),
+                    Text('Rs. ${totalValue.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1a2744))),
                     const Text('Total Stock Value'),
                     const SizedBox(height: 16),
                     if (categoryData.isNotEmpty)
@@ -135,7 +138,12 @@ class _DashboardHomeState extends State<DashboardHome> {
                         child: PieChart(
                           PieChartData(
                             sections: categoryData.entries.map((e) {
-                              final colors = [const Color(0xFF1a2744), const Color(0xFFc9a84c), Colors.green, Colors.red];
+                              final colors = [
+                                const Color(0xFF1a2744),
+                                const Color(0xFFc9a84c),
+                                Colors.green,
+                                Colors.red
+                              ];
                               final idx = categoryData.keys.toList().indexOf(e.key);
                               return PieChartSectionData(
                                 value: e.value,
@@ -145,3 +153,59 @@ class _DashboardHomeState extends State<DashboardHome> {
                                 titleStyle: const TextStyle(fontSize: 10, color: Colors.white),
                               );
                             }).toList(),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (lowStockItems.isNotEmpty)
+              Card(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(children: [
+                        Icon(Icons.warning, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('Low Stock Alerts',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ]),
+                      ...lowStockItems.map((item) => ListTile(
+                            leading: const Icon(Icons.warning_amber, color: Colors.orange),
+                            title: Text('${item['name']} (${item['quantity']} units left)'),
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            Card(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    ...inventoryItems.map((item) => ListTile(
+                          title: Text(item['name']),
+                          subtitle: Text('${item['quantity']} Units - Rs. ${item['price']}/u'),
+                        )),
+                    if (inventoryItems.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('No inventory items yet'),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
