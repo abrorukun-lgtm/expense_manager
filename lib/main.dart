@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import 'screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await getDatabasesPath();
+  } catch (e) {
+    debugPrint('DB init error: $e');
+  }
   runApp(const MyApp());
 }
 
