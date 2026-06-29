@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../database/database_helper.dart';
 import 'inventory_screen.dart';
-import 'expenses_screen.dart';
-import 'sales_screen.dart';
+import 'expenses_screen.dart' as exp;
+import 'sales_screen.dart' as sal;
 import 'reports_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -17,11 +17,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const DashboardHome(),
-    const InventoryScreen(),
-    const SalesScreen(),
-    const ExpensesScreen(),
-    const ReportsScreen(),
+    DashboardHome(),
+    InventoryScreen(),
+    sal.SalesScreen(),
+    exp.ExpensesScreen(),
+    ReportsScreen(),
   ];
 
   @override
@@ -70,6 +70,7 @@ class _DashboardHomeState extends State<DashboardHome> {
   Future<void> _loadData() async {
     try {
       final items = await DatabaseHelper.instance.getItems();
+      if (!mounted) return;
       int units = 0;
       double value = 0;
       Map<String, double> catData = {};
