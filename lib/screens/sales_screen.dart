@@ -21,6 +21,7 @@ class _SalesScreenState extends State<SalesScreen> {
   Future<void> _loadData() async {
     final salesData = await DatabaseHelper.instance.getSales();
     final itemsData = await DatabaseHelper.instance.getItems();
+    if (!mounted) return;
     setState(() {
       sales = salesData;
       inventoryItems = itemsData;
@@ -63,6 +64,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   'price': double.tryParse(priceController.text) ?? 0,
                   'date': DateTime.now().toIso8601String(),
                 });
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 _loadData();
               }
@@ -76,7 +78,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double total = sales.fold(0, (sum, s) => sum + (s['price'] as double) * (s['quantity'] as int));
+    double total = sales.fold(0, (sum, s) => sum + (s['price'] as num).toDouble() * (s['quantity'] as num).toInt());
     return Scaffold(
       backgroundColor: const Color(0xFF1a2744),
       appBar: AppBar(
@@ -110,6 +112,8 @@ class _SalesScreenState extends State<SalesScreen> {
                     itemCount: sales.length,
                     itemBuilder: (context, index) {
                       final sale = sales[index];
+                      final price = (sale['price'] as num).toDouble();
+                      final qty = (sale['quantity'] as num).toInt();
                       return Card(
                         color: Colors.white,
                         margin: const EdgeInsets.only(bottom: 8),
@@ -119,8 +123,8 @@ class _SalesScreenState extends State<SalesScreen> {
                             child: Icon(Icons.shopping_cart, color: Colors.white),
                           ),
                           title: Text(sale['itemName'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('Qty: ${sale['quantity']}'),
-                          trailing: Text('Rs. ${(sale['price'] as double) * (sale['quantity'] as int)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('Qty: $qty'),
+                          trailing: Text('Rs. ${(price * qty).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       );
                     },

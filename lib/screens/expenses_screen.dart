@@ -1,47 +1,55 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 
-class ExpensesScreen extends StatefulWidget {
-  const ExpensesScreen({super.key});
+class SalesScreen extends StatefulWidget {
+  const SalesScreen({super.key});
 
   @override
-  State<ExpensesScreen> createState() => _ExpensesScreenState();
+  State<SalesScreen> createState() => _SalesScreenState();
 }
 
-class _ExpensesScreenState extends State<ExpensesScreen> {
-  List<Map<String, dynamic>> expenses = [];
+class _SalesScreenState extends State<SalesScreen> {
+  List<Map<String, dynamic>> sales = [];
+  List<Map<String, dynamic>> inventoryItems = [];
 
   @override
   void initState() {
     super.initState();
-    _loadExpenses();
+    _loadData();
   }
 
-  Future<void> _loadExpenses() async {
-    final data = await DatabaseHelper.instance.getExpenses();
-    setState(() => expenses = data);
+  Future<void> _loadData() async {
+    final salesData = await DatabaseHelper.instance.getSales();
+    final itemsData = await DatabaseHelper.instance.getItems();
+    if (!mounted) return;
+    setState(() {
+      sales = salesData;
+      inventoryItems = itemsData;
+    });
   }
 
-  Future<void> _deleteExpense(int id) async {
-    await DatabaseHelper.instance.deleteExpense(id);
-    _loadExpenses();
-  }
-
-  void _showAddExpenseDialog() {
-    final titleController = TextEditingController();
-    final amountController = TextEditingController();
-    final categoryController = TextEditingController();
+  void _showAddSaleDialog() {
+    String? selectedItem;
+    final quantityController = TextEditingController();
+    final priceController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Expense'),
+        title: const Text('Add Sale'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
-            TextField(controller: amountController, decoration: const InputDecoration(labelText: 'Amount (Rs.)'), keyboardType: TextInputType.number),
-            TextField(controller: categoryController, decoration: const InputDecoration(labelText: 'Category')),
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(labelText: 'Select Item'),
+              items: inventoryItems.map((item) => DropdownMenuItem(
+                value: item['name'] as String,
+                child: Text(item['name']),
+              )).toList(),
+              onChanged: (val) => selectedItem = val,
+            ),
+            TextField(controller: quantityController, decoration: const InputDecoration(labelText: 'Quantity Sold'), keyboardType: TextInputType.number),
+            TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Sale Price (Rs.)'), keyboardType: TextInputType.number),
           ],
         ),
         actions: [
@@ -49,14 +57,17 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1a2744)),
             onPressed: () async {
-              await DatabaseHelper.instance.addExpense({
-                'title': titleController.text,
-                'amount': double.tryParse(amountController.text) ?? 0,
-                'category': categoryController.text,
-                'date': DateTime.now().toIso8601String(),
-              });
-              Navigator.pop(context);
-              _loadExpenses();
+              if (selectedItem != null) {
+                await DatabaseHelper.instance.addSale({
+                  'itemName': selectedItem,
+                  'quantity': int.tryParse(quantityController.text) ?? 0,
+                  'price': double.tryParse(priceController.text) ?? 0,
+                  'date': DateTime.now().toIso8601String(),
+                });
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                _loadData();
+              }
             },
             child: const Text('Add', style: TextStyle(color: Colors.white)),
           ),
@@ -67,16 +78,16 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double total = expenses.fold(0, (sum, e) => sum + (e['amount'] as num).toDouble());
+    double total = sales.fold(0, (sum, s) => sum + (s['price'] as num).toDouble() * (s['quantity'] as num).toInt());
     return Scaffold(
       backgroundColor: const Color(0xFF1a2744),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1a2744),
-        title: const Text('Expenses', style: TextStyle(color: Color(0xFFc9a84c), fontWeight: FontWeight.bold)),
+        title: const Text('Sales', style: TextStyle(color: Color(0xFFc9a84c), fontWeight: FontWeight.bold)),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFFc9a84c),
-        onPressed: _showAddExpenseDialog,
+        onPressed: _showAddSaleDialog,
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
@@ -88,39 +99,32 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Total Expenses', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Total Sales', style: TextStyle(fontWeight: FontWeight.bold)),
                 Text('Rs. ${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1a2744))),
               ],
             ),
           ),
           Expanded(
-            child: expenses.isEmpty
-                ? const Center(child: Text('No expenses added yet', style: TextStyle(color: Colors.white)))
+            child: sales.isEmpty
+                ? const Center(child: Text('No sales added yet', style: TextStyle(color: Colors.white)))
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: expenses.length,
+                    itemCount: sales.length,
                     itemBuilder: (context, index) {
-                      final expense = expenses[index];
+                      final sale = sales[index];
+                      final price = (sale['price'] as num).toDouble();
+                      final qty = (sale['quantity'] as num).toInt();
                       return Card(
                         color: Colors.white,
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: const CircleAvatar(
-                            backgroundColor: Color(0xFF1a2744),
-                            child: Icon(Icons.receipt, color: Colors.white),
+                            backgroundColor: Color(0xFFc9a84c),
+                            child: Icon(Icons.shopping_cart, color: Colors.white),
                           ),
-                          title: Text(expense['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(expense['category'] ?? ''),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Rs. ${expense['amount']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteExpense(expense['id']),
-                              ),
-                            ],
-                          ),
+                          title: Text(sale['itemName'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('Qty: $qty'),
+                          trailing: Text('Rs. ${(price * qty).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       );
                     },

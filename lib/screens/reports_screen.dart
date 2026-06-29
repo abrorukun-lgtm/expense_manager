@@ -25,9 +25,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final salesData = await DatabaseHelper.instance.getSales();
     final expensesData = await DatabaseHelper.instance.getExpenses();
 
-    double sTotal = salesData.fold(0, (sum, s) => sum + (s['price'] as double) * (s['quantity'] as int));
-    double eTotal = expensesData.fold(0, (sum, e) => sum + (e['amount'] as double));
+    double sTotal = salesData.fold(0, (sum, s) => sum + (s['price'] as num).toDouble() * (s['quantity'] as num).toInt());
+    double eTotal = expensesData.fold(0, (sum, e) => sum + (e['amount'] as num).toDouble());
 
+    if (!mounted) return;
     setState(() {
       sales = salesData;
       expenses = expensesData;
@@ -51,7 +52,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Summary Cards
           Row(
             children: [
               Expanded(
@@ -102,8 +102,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Chart
           if (totalSales > 0 || totalExpenses > 0)
             Card(
               color: Colors.white,

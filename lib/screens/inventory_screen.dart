@@ -19,11 +19,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Future<void> _loadItems() async {
     final data = await DatabaseHelper.instance.getItems();
+    if (!mounted) return;
     setState(() => items = data);
   }
 
   Future<void> _deleteItem(int id) async {
     await DatabaseHelper.instance.deleteItem(id);
+    if (!mounted) return;
     _loadItems();
   }
 
@@ -61,6 +63,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 'price': double.tryParse(priceController.text) ?? 0,
                 'lowStockLimit': int.tryParse(lowStockController.text) ?? 5,
               });
+              if (!context.mounted) return;
               Navigator.pop(context);
               _loadItems();
             },
