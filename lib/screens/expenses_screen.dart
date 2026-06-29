@@ -67,7 +67,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double total = expenses.fold(0, (sum, e) => sum + (e['amount'] as double));
+    double total = expenses.fold(0, (sum, e) => sum + (e['amount'] as num).toDouble());
     return Scaffold(
       backgroundColor: const Color(0xFF1a2744),
       appBar: AppBar(
